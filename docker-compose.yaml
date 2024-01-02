@@ -1,0 +1,39 @@
+version: '3.6'
+
+services:
+  backstage-db:
+    container_name: backstage-db
+    image: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - '5432:5432'
+    volumes:
+      - backstage-db:/var/lib/postgresql/data
+
+  backstage:
+    container_name: backstage
+    image: node:18
+    restart: unless-stopped
+    user: '1001:1024' # taki user i nieistniejąca grupa wyeliminuje problemy z dostępem do plików między lokalnym systemem, a wnętrzem kontenera
+    working_dir: /home/app
+    network_mode: 'host' # bez tego będzie problem z komunikacją z backendem
+    environment:
+      - FRONTEND_URL=${FRONTEND_URL}
+      - BACKEND_SECRET=${BACKEND_SECRET}
+      - BACKEND_URL=${BACKEND_URL}
+      - BACKEND_LISTEN=${BACKEND_LISTEN}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - .:/home/app
+      - ./passwd:/etc/passwd
+    entrypoint: sh -c "yarn install && yarn dev"
+    depends_on:
+      - backstage-db
+
+volumes:
+  backstage-db:
